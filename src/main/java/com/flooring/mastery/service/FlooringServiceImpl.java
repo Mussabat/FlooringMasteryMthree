@@ -175,4 +175,10 @@ public class FlooringServiceImpl implements FlooringService {
         getOrder(date, orderNumber);
         return orderDao.removeOrder(date, orderNumber);
     }
+
+    // no business rule to check: the DAO knows where the orders are and how to write the export file
+    @Override
+    public void exportAllData() throws FlooringPersistenceException {
+        orderDao.exportAllData();
+    }
 }

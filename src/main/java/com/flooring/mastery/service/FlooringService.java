@@ -51,4 +51,7 @@ public interface FlooringService {
 
     // removes the order and returns it; throws NoSuchOrderException if it does not exist
     Order removeOrder(LocalDate date, int orderNumber) throws FlooringPersistenceException, NoSuchOrderException;
+
+    // writes all orders of all days into the export file
+    void exportAllData() throws FlooringPersistenceException;
 }
