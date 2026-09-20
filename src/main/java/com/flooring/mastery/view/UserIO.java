@@ -1,5 +1,7 @@
 package com.flooring.mastery.view;
 
+import java.time.LocalDate;
+
 public interface UserIO {
     // shows a message on screen
     void print(String message);
@@ -14,6 +16,8 @@ public interface UserIO {
     // shows the prompt and returns the whole number between min and max
     int readInt(String prompt, int min, int max);
 
+    // shows the prompt and returns the date typed as MM/DD/YYYY
+    LocalDate readDate(String prompt);
 
 }
 
