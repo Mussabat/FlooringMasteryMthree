@@ -1,12 +1,24 @@
 package com.flooring.mastery.view;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import com.flooring.mastery.model.Order;
 
 // Everything the user sees on screen goes through this class.
 // It never prints by itself. It always asks UserIO to do the raw input/output.
 @Component
 public class FlooringView {
+
+    // date shown to the user in the table title
+    private static final DateTimeFormatter DISPLAY_DATE_FORMAT = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+
+    // one row of the order table: left-aligned text columns, right-aligned number columns
+    private static final String ROW_FORMAT = "%-4s %-22s %-5s %-10s %10s %10s %10s %10s %10s";
 
     private final UserIO io;
 
@@ -52,5 +64,27 @@ public class FlooringView {
 
     public void displaySuccess(String message) {
         io.print(message);
+    }
+
+    // asks the user for a date and returns it (UserIO already made sure the format is right)
+    public LocalDate getOrderDate() {
+        return io.readDate("Please enter the order date (MM/DD/YYYY):");
+    }
+
+    // prints all orders of one date as a table: a title, a header row, then one row per order
+    public void displayOrderList(LocalDate date, List<Order> orders) {
+        io.print("Orders for " + date.format(DISPLAY_DATE_FORMAT) + ":");
+        io.print(String.format(ROW_FORMAT,
+                "No.", "Customer", "State", "Product", "Area", "Material", "Labor", "Tax", "Total"));
+        orders.forEach(order -> io.print(String.format(ROW_FORMAT,
+                order.getOrderNumber(),
+                order.getCustomerName(),
+                order.getState(),
+                order.getProductType(),
+                order.getArea().toPlainString(),
+                order.getMaterialCost().toPlainString(),
+                order.getLaborCost().toPlainString(),
+                order.getTax().toPlainString(),
+                order.getTotal().toPlainString())));
     }
 }
