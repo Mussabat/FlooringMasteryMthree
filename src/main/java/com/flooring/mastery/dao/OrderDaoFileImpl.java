@@ -79,9 +79,18 @@ public class OrderDaoFileImpl implements OrderDao {
         throw new UnsupportedOperationException("");
     }
 
+    // removes one order from its day: load the day, remove the order, write the day back.
+    // Returns the removed order, or null if there was no such order (then nothing is written).
+    // If it was the last order of the day, writeOrders deletes the day's file.
     @Override
     public Order removeOrder(LocalDate date, int orderNumber) throws FlooringPersistenceException {
-        throw new UnsupportedOperationException("");
+        Map<Integer, Order> orders = loadOrders(date);
+        Order removedOrder = orders.remove(orderNumber);
+
+        if (removedOrder != null) {
+            writeOrders(date, orders);
+        }
+        return removedOrder;
     }
 
     // looks through the order files of ALL days and returns the biggest order number (0 if there are no orders)
