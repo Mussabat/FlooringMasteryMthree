@@ -72,6 +72,11 @@ public class FlooringView {
         io.print(message);
     }
 
+    // asks for an order number (UserIO makes sure it is a whole number; the service checks that the order exists)
+    public int getOrderNumber() {
+        return io.readInt("Please enter the order number:");
+    }
+
     // asks the user for a date and returns it (UserIO already made sure the format is right)
     public LocalDate getOrderDate() {
         return io.readDate("Please enter the order date (MM/DD/YYYY):");
