@@ -31,6 +31,8 @@ public class OrderDaoFileImpl implements OrderDao {
     private static final String HEADER = "OrderNumber,CustomerName,State,TaxRate,ProductType,Area,"
             + "CostPerSquareFoot,LaborCostPerSquareFoot,MaterialCost,LaborCost,Tax,Total";
     private static final String DELIMITER = ",";
+    private static final String EXPORT_HEADER = HEADER + ",OrderDate";
+    private static final DateTimeFormatter EXPORT_DATE_FORMAT = DateTimeFormatter.ofPattern("MM-dd-yyyy");
     private static final DateTimeFormatter FILE_DATE_FORMAT = DateTimeFormatter.ofPattern("MMddyyyy");
     private static final String ORDER_FILE_NAME_PATTERN = "Orders_[0-9]{8}[.]txt";
 
@@ -113,9 +115,28 @@ public class OrderDaoFileImpl implements OrderDao {
         return highest;
     }
 
+    // writes the orders of ALL days into the export file, oldest day first. Every line is a normal order line
+    // plus the date at the end (MM-dd-yyyy). The old export file is replaced, never appended to.
     @Override
     public void exportAllData() throws FlooringPersistenceException {
-        throw new UnsupportedOperationException("");
+        // first collect all lines, so a problem while reading the order files does not leave a half-written export
+        List<String> lines = new ArrayList<>();
+        lines.add(EXPORT_HEADER);
+        for (LocalDate date : getAllOrderDates()) {
+            for (Order order : loadOrders(date).values()) {
+                lines.add(marshallOrder(order) + DELIMITER + date.format(EXPORT_DATE_FORMAT));
+            }
+        }
+
+        File file = new File(exportFile);
+        file.getParentFile().mkdirs(); // create the Backup folder if it does not exist yet
+
+        // FileWriter without "true" = overwrite. try-with-resources closes the file for us.
+        try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+            lines.forEach(writer::println);
+        } catch (IOException e) {
+            throw new FlooringPersistenceException("Could not export order data.", e);
+        }
     }
 
     // builds the file for one day, e.g. 2013-06-01 -> Orders/Orders_06012013.txt
