@@ -106,25 +106,48 @@ public class FlooringView {
 
     // prints the states we sell in, then asks for one
     public String getState(List<Tax> taxes) {
-        io.print("We sell in these states:");
-        taxes.forEach(tax -> io.print("  " + tax.getStateAbbreviation() + " - " + tax.getStateName()));
+        displayStates(taxes);
         return io.readString("Please enter the state abbreviation:");
     }
 
     // prints the products with their prices, then asks for one
     public String getProductType(List<Product> products) {
-        io.print("We sell these products (prices per square foot):");
-        io.print(String.format(PRODUCT_ROW_FORMAT, "Product", "Material", "Labor"));
-        products.forEach(product -> io.print(String.format(PRODUCT_ROW_FORMAT,
-                product.getProductType(),
-                product.getCostPerSquareFoot().toPlainString(),
-                product.getLaborCostPerSquareFoot().toPlainString())));
+        displayProducts(products);
         return io.readString("Please enter the product type:");
     }
 
     // asks for the area in square feet (UserIO makes sure it is a number)
     public BigDecimal getArea() {
         return io.readBigDecimal("Please enter the area in square feet (minimum 100):");
+    }
+
+    //  Edit: the prompt shows the current value; pressing Enter keeps it 
+
+    // tells the user how to keep a value (shown once at the start of Edit)
+    public void displayEditInstructions() {
+        io.print("Press Enter to keep the current value.");
+    }
+
+    // asks for a new customer name, or returns the current one if the user just presses Enter
+    public String getEditCustomerName(String currentName) {
+        return keepCurrentIfBlank(io.readString("Enter customer name (" + currentName + "):"), currentName);
+    }
+
+    // prints the states we sell in, then asks for a new state (Enter keeps the current one)
+    public String getEditState(String currentState, List<Tax> taxes) {
+        displayStates(taxes);
+        return keepCurrentIfBlank(io.readString("Enter state (" + currentState + "):"), currentState);
+    }
+
+    // prints the products with their prices, then asks for a new product (Enter keeps the current one)
+    public String getEditProductType(String currentProductType, List<Product> products) {
+        displayProducts(products);
+        return keepCurrentIfBlank(io.readString("Enter product type (" + currentProductType + "):"), currentProductType);
+    }
+
+    // asks for a new area (UserIO makes sure it is a number); Enter returns the current area
+    public BigDecimal getEditArea(BigDecimal currentArea) {
+        return io.readBigDecimal("Enter area (" + currentArea.toPlainString() + "):", currentArea);
     }
 
     // prints every detail of one order; the order number is only shown once the order has one (> 0)
@@ -150,5 +173,26 @@ public class FlooringView {
     // asks a yes/no question and returns true for Y
     public boolean confirm(String question) {
         return io.readYesNo(question + " (Y/N)");
+    }
+
+    // prints one line per state we sell in, e.g. "  TX - Texas"
+    private void displayStates(List<Tax> taxes) {
+        io.print("We sell in these states:");
+        taxes.forEach(tax -> io.print("  " + tax.getStateAbbreviation() + " - " + tax.getStateName()));
+    }
+
+    // prints a small price table of the products we sell
+    private void displayProducts(List<Product> products) {
+        io.print("We sell these products (prices per square foot):");
+        io.print(String.format(PRODUCT_ROW_FORMAT, "Product", "Material", "Labor"));
+        products.forEach(product -> io.print(String.format(PRODUCT_ROW_FORMAT,
+                product.getProductType(),
+                product.getCostPerSquareFoot().toPlainString(),
+                product.getLaborCostPerSquareFoot().toPlainString())));
+    }
+
+    // blank input (just Enter) means "keep the current value"
+    private String keepCurrentIfBlank(String input, String currentValue) {
+        return input.isBlank() ? currentValue : input;
     }
 }
