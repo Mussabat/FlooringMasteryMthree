@@ -74,9 +74,14 @@ public class OrderDaoFileImpl implements OrderDao {
         return order;
     }
 
+    // replaces a saved order by the edited one: load the day, put the order (the same order number
+    // replaces the old entry in the map), write the day back. The service has already checked that it exists.
     @Override
     public Order editOrder(Order order) throws FlooringPersistenceException {
-        throw new UnsupportedOperationException("");
+        Map<Integer, Order> orders = loadOrders(order.getOrderDate());
+        orders.put(order.getOrderNumber(), order);
+        writeOrders(order.getOrderDate(), orders);
+        return order;
     }
 
     // removes one order from its day: load the day, remove the order, write the day back.
