@@ -85,6 +85,22 @@ public class UserIOConsoleImpl implements UserIO {
         }
     }
 
+    // like readBigDecimal, but pressing Enter (blank input) keeps the default value (used by Edit)
+    @Override
+    public BigDecimal readBigDecimal(String prompt, BigDecimal defaultValue) {
+        while (true) {
+            String input = readString(prompt);
+            if (input.isBlank()) {
+                return defaultValue;
+            }
+            try {
+                return new BigDecimal(input.trim());
+            } catch (NumberFormatException e) {
+                print("Please enter a number, for example 250 or 249.5.");
+            }
+        }
+    }
+
     // keep asking until user enters Y or N (upper or lower case)
     @Override
     public boolean readYesNo(String prompt) {

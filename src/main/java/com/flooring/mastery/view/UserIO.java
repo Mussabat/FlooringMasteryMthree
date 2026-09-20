@@ -23,6 +23,9 @@ public interface UserIO {
     // shows the prompt and returns the number typed (decimals allowed, for example 249.5)
     BigDecimal readBigDecimal(String prompt);
 
+    // same as above, but pressing Enter (blank input) returns defaultValue
+    BigDecimal readBigDecimal(String prompt, BigDecimal defaultValue);
+
     // shows the prompt and returns true for Y and false for N
     boolean readYesNo(String prompt);
 
