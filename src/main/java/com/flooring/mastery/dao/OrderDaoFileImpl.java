@@ -7,15 +7,19 @@ import org.springframework.stereotype.Repository;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 // Reads and writes orders in text files: one file per day, named Orders_MMDDYYYY.txt.
 // The date is NOT inside a line, it comes from the file name.
@@ -28,6 +32,7 @@ public class OrderDaoFileImpl implements OrderDao {
             + "CostPerSquareFoot,LaborCostPerSquareFoot,MaterialCost,LaborCost,Tax,Total";
     private static final String DELIMITER = ",";
     private static final DateTimeFormatter FILE_DATE_FORMAT = DateTimeFormatter.ofPattern("MMddyyyy");
+    private static final String ORDER_FILE_NAME_PATTERN = "Orders_[0-9]{8}[.]txt";
 
     // a line has: 1 order number + at least 1 name token + 10 fixed columns after the name
     private static final int FIXED_COLUMNS_AFTER_NAME = 10;
@@ -60,9 +65,13 @@ public class OrderDaoFileImpl implements OrderDao {
         return loadOrders(date).get(orderNumber);
     }
 
+    // saves a new order into the file of its date: load the day, add the order, write the day back
     @Override
     public Order addOrder(Order order) throws FlooringPersistenceException {
-        throw new UnsupportedOperationException("");
+        Map<Integer, Order> orders = loadOrders(order.getOrderDate());
+        orders.put(order.getOrderNumber(), order);
+        writeOrders(order.getOrderDate(), orders);
+        return order;
     }
 
     @Override
@@ -75,9 +84,19 @@ public class OrderDaoFileImpl implements OrderDao {
         throw new UnsupportedOperationException("");
     }
 
+    // looks through the order files of ALL days and returns the biggest order number (0 if there are no orders)
     @Override
     public int getHighestOrderNumber() throws FlooringPersistenceException {
-        throw new UnsupportedOperationException("");
+        int highest = 0;
+        // a normal for loop (not a lambda): loadOrders throws a checked exception, which a lambda cannot pass on
+        for (LocalDate date : getAllOrderDates()) {
+            int highestOfDay = loadOrders(date).keySet().stream()
+                    .mapToInt(Integer::intValue)
+                    .max()
+                    .orElse(0);
+            highest = Math.max(highest, highestOfDay);
+        }
+        return highest;
     }
 
     @Override
@@ -117,6 +136,70 @@ public class OrderDaoFileImpl implements OrderDao {
         }
 
         return orders;
+    }
+
+    // returns the dates of all days that have an order file, oldest first.
+    // Only files named Orders_MMDDYYYY.txt count. No folder yet -> empty list.
+    private List<LocalDate> getAllOrderDates() throws FlooringPersistenceException {
+        File[] files = new File(ordersFolder).listFiles();
+        if (files == null) {
+            return new ArrayList<>(); // listFiles() gives null when the folder does not exist
+        }
+
+        try {
+            return Arrays.stream(files)
+                    .map(File::getName)
+                    .filter(name -> name.matches(ORDER_FILE_NAME_PATTERN))
+                    // "Orders_06012013.txt": the 8 date digits are at positions 7 to 15
+                    .map(name -> LocalDate.parse(name.substring(7, 15), FILE_DATE_FORMAT))
+                    .sorted()
+                    .collect(Collectors.toList());
+        } catch (DateTimeParseException e) {
+            // 8 digits that are not a real date, e.g. Orders_13452013.txt
+            throw new FlooringPersistenceException("Bad order file name in the " + ordersFolder + " folder.", e);
+        }
+    }
+
+    // saves all orders of one day into that day's file (this replaces the old content of the file).
+    // No orders left -> delete the file, so a day without orders has no file.
+    private void writeOrders(LocalDate date, Map<Integer, Order> orders) throws FlooringPersistenceException {
+        File orderFile = getOrderFile(date);
+
+        if (orders.isEmpty()) {
+            if (orderFile.exists() && !orderFile.delete()) {
+                throw new FlooringPersistenceException("Could not delete the empty order file.");
+            }
+            return;
+        }
+
+        orderFile.getParentFile().mkdirs(); // create the Orders folder if it does not exist yet
+
+        // FileWriter without "true" = overwrite. try-with-resources closes the file for us.
+        try (PrintWriter writer = new PrintWriter(new FileWriter(orderFile))) {
+            writer.println(HEADER);
+            for (Order order : orders.values()) {
+                writer.println(marshallOrder(order));
+            }
+        } catch (IOException e) {
+            throw new FlooringPersistenceException("Could not save order data.", e);
+        }
+    }
+
+    // turns an Order into one text line (the opposite of unmarshallOrder).
+    private String marshallOrder(Order order) {
+        return String.join(DELIMITER,
+                String.valueOf(order.getOrderNumber()),
+                order.getCustomerName(),
+                order.getState(),
+                order.getTaxRate().toPlainString(),
+                order.getProductType(),
+                order.getArea().toPlainString(),
+                order.getCostPerSquareFoot().toPlainString(),
+                order.getLaborCostPerSquareFoot().toPlainString(),
+                order.getMaterialCost().toPlainString(),
+                order.getLaborCost().toPlainString(),
+                order.getTax().toPlainString(),
+                order.getTotal().toPlainString());
     }
 
     // turns one text line into an Order object.
