@@ -1,5 +1,6 @@
 package com.flooring.mastery.view;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -68,6 +69,34 @@ public class UserIOConsoleImpl implements UserIO {
             } catch (DateTimeParseException e) {
                 print("Please enter a real date as MM/DD/YYYY, for example 06/01/2013.");
             }
+        }
+    }
+
+    // keep asking until user enters a number (this only checks the FORMAT;
+    @Override
+    public BigDecimal readBigDecimal(String prompt) {
+        while (true) {
+            String input = readString(prompt);
+            try {
+                return new BigDecimal(input.trim());
+            } catch (NumberFormatException e) {
+                print("Please enter a number, for example 250 or 249.5.");
+            }
+        }
+    }
+
+    // keep asking until user enters Y or N (upper or lower case)
+    @Override
+    public boolean readYesNo(String prompt) {
+        while (true) {
+            String input = readString(prompt).trim();
+            if (input.equalsIgnoreCase("Y")) {
+                return true;
+            }
+            if (input.equalsIgnoreCase("N")) {
+                return false;
+            }
+            print("Please enter Y or N.");
         }
     }
 
