@@ -45,4 +45,7 @@ public interface FlooringService {
 
     // gives the order the next order number and saves it
     Order addOrder(Order order) throws FlooringPersistenceException;
+
+    // removes the order and returns it; throws NoSuchOrderException if it does not exist
+    Order removeOrder(LocalDate date, int orderNumber) throws FlooringPersistenceException, NoSuchOrderException;
 }

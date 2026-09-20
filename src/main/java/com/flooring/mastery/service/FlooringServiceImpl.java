@@ -161,4 +161,11 @@ public class FlooringServiceImpl implements FlooringService {
         order.setOrderNumber(orderDao.getHighestOrderNumber() + 1);
         return orderDao.addOrder(order);
     }
+
+    // getOrder throws NoSuchOrderException when the order is missing, so we only reach the DAO for an existing order
+    @Override
+    public Order removeOrder(LocalDate date, int orderNumber) throws FlooringPersistenceException, NoSuchOrderException {
+        getOrder(date, orderNumber);
+        return orderDao.removeOrder(date, orderNumber);
+    }
 }
